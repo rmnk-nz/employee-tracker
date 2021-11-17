@@ -30,6 +30,7 @@ function main() {
             'Add Role',
             'View Employees',
             'Add Employee',
+            'Update Employee Role',
             'Exit',
             ]
         }
@@ -55,6 +56,9 @@ function main() {
               case 'Add Employee':
                 addEmp();
                 break;
+                case 'Update Employee Role':
+                updateEmp();
+                break;
               case 'Exit':
                 db.end();
                 break;
@@ -63,7 +67,23 @@ function main() {
 };
 
 function viewDep() {
-    db.query("SELECT * FROM department", (err, result) => {
+    db.query('SELECT * FROM department', (err, result) => {
+        if (err) throw err;
+        console.table(result);
+        main();
+    });
+};
+
+function viewEmp () {
+    db.query('SELECT * FROM employee', (err, result) => {
+        if (err) throw err;
+        console.table(result);
+        main();
+    });
+};
+
+function viewRoles () {
+    db.query('SELECT * FROM roles', (err, result) => {
         if (err) throw err;
         console.table(result);
         main();
@@ -75,17 +95,111 @@ function addDep() {
     .prompt([
         {
             type: 'input',
-            name: 'addDep',
+            name: 'department',
             message: 'Enter name of departmant you want to add',
         }
     ])
-    .then ((input) => {
-        let depName = input.addDep;
-        let qry = `INSERT INTO department (department_name) VALUES ('${depName}')`;
-        db.query(qry, (err, result) => {
+    .then ((response) => {
+        db.query(`INSERT INTO department (department_name) VALUES ('${response.department}')`, (err, result) => {
             if (err) throw err;
-            console.table(result);
+            console.log('Succesfully added new department to Company Database');
             main();
         })
     });
 };
+
+function addRoles() {
+    let departments = [];
+
+    db.query('SELECT * FROM department', (err, result) => {
+        if (err) throw err;
+        for (let i = 0; i < result.length; i++) {
+            departments.push(result[i].department_name)
+        } return departments
+    });
+
+    inquirer
+    .prompt([
+        {
+            type: 'input',
+            name: 'title',
+            message: 'Enter title of new role',
+        },
+        {
+            type: 'input',
+            name: 'salary',
+            message: " Enter salary for new role",
+        },
+        {
+            type: 'list',
+            name: 'roleDepartment',
+            message: 'Associate new role to a Department',
+            choices: departments,
+        }
+    ])
+    .then((response) => {
+        let departmentID = departments.indexOf(response.roleDepartment) +1;
+
+        db.query(`INSERT INTO roles (title, salary, department_id) VALUES('${response.title}', '${response.salary}', '${departmentID}')`, (err, result) => {
+            if (err) throw err;
+            console.log('Successfully added new role to Comapny Database');
+            main();
+        });
+    });
+};
+
+function addEmp () {
+    let roles = [];
+    let managers = ['NULL']; 
+
+    db.query('SELECT * FROM roles', (err, result) => {
+        if (err) throw err;
+        for(let i = 0; i < result.length; i++) {
+        roles.push(result[i].title)
+        } return roles;
+    });
+
+    db.query('SELECT * FROM employee', (err, result) => {
+        if (err) throw err;
+        for(let i = 0; i < result.length; i++) {
+        managers.push(result[i].first_name)
+        } return managers
+    });
+    
+    inquirer
+     .prompt([
+        {
+            type: 'input',
+            name: 'firstname',
+            message: 'Enter employees first name'
+        },
+        {
+            type: 'input',
+            name: 'lastname',
+            message: 'Enter employee last name'  
+        },
+        {
+            type: 'list',
+            name: 'employeeRole',
+            message: 'Select new employees role',
+            choices: roles,
+        },
+        {
+            type: 'list',
+            name: 'employeeManager',
+            message: 'Select manager of employee if applicable',
+            choices: managers,
+        }
+               
+    ])
+    .then ((response) => {
+        let roleID = roles.indexOf(response.employeeRole) +1;
+        let managerID = managers.indexOf(response.employeeManager) + 1;
+        
+        db.query(`INSERT INTO employee(first_name, Last_name, roles_id, manager_id) VALUES('${response.firstname}', '${response.lastname}', '${roleID}', '${managerID}')`, (err, result) => {
+            if (err) throw err;
+            console.log('Successfully added new employee to Comapny Database');
+            main();
+        });
+    });
+}
