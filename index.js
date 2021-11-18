@@ -36,7 +36,6 @@ function main() {
         }
     ])
     .then((response) => {
-        console.log(response);
             switch (response.main) {
               case 'View Departments':
                 viewDep();
@@ -60,6 +59,7 @@ function main() {
                 updateEmp();
                 break;
               case 'Exit':
+                console.log('Leaving Company Database');
                 db.end();
                 break;
             }
@@ -74,7 +74,7 @@ function viewDep() {
     });
 };
 
-function viewEmp () {
+function viewEmp() {
     db.query('SELECT * FROM employee', (err, result) => {
         if (err) throw err;
         console.table(result);
@@ -82,7 +82,7 @@ function viewEmp () {
     });
 };
 
-function viewRoles () {
+function viewRoles() {
     db.query('SELECT * FROM roles', (err, result) => {
         if (err) throw err;
         console.table(result);
@@ -148,9 +148,9 @@ function addRoles() {
     });
 };
 
-function addEmp () {
+function addEmp() {
     let roles = [];
-    let managers = ['NULL']; 
+    let managers = ['Not Applicable']; 
 
     db.query('SELECT * FROM roles', (err, result) => {
         if (err) throw err;
@@ -196,10 +196,73 @@ function addEmp () {
         let roleID = roles.indexOf(response.employeeRole) +1;
         let managerID = managers.indexOf(response.employeeManager) + 1;
         
-        db.query(`INSERT INTO employee(first_name, Last_name, roles_id, manager_id) VALUES('${response.firstname}', '${response.lastname}', '${roleID}', '${managerID}')`, (err, result) => {
-            if (err) throw err;
-            console.log('Successfully added new employee to Comapny Database');
-            main();
-        });
+        if (response.employeeManager === 'Not Applicable') {
+                    db.query(`INSERT INTO employee(first_name, Last_name, roles_id) VALUES('${response.firstname}', '${response.lastname}', '${roleID}')`, (err, result) => {
+                    if (err) throw err;
+                    console.log('Successfully added new employee to Comapny Database');
+                    main();
+                });                
+            } 
+            else {
+                db.query(`INSERT INTO employee(first_name, Last_name, roles_id, manager_id) VALUES('${response.firstname}', '${response.lastname}', '${roleID}', '${managerID}')`, (err, result) => {
+                if (err) throw err;
+                console.log('Successfully added new employee to Comapny Database');
+                main();
+                });
+            }
     });
-}
+};
+
+function updateEmp() {
+    let companyEmployee = [];
+    let companyRole = [];
+
+    db.query('SELECT * FROM employee', (err, result) => {
+        if (err) throw err;
+        for(let i = 0; i < result.length; i++) {
+        companyEmployee.push(result[i].first_name + ' ' + result[i].last_name)
+        } return companyEmployee
+    });
+   
+    db.query('SELECT * FROM roles', (err, result) => {
+        if (err) throw err;
+        for(let i = 0; i < result.length; i++) {
+        companyRole.push(result[i].title)
+        } return companyRole
+    });
+
+    inquirer
+    .prompt ([
+        {
+            type: 'list',
+            name: 'init',
+            message: 'Upadte employee role?',
+            choices: ['YES', 'NO']
+        },
+        {
+            type: 'list',
+            name: 'employee',
+            message: 'Select employeee',
+            choices: companyEmployee,
+        },
+        {
+        type: 'list',
+        name: 'newRole',
+        message: 'Select role',
+        choices: companyRole,
+        }
+    ])
+    .then ((response) => {
+        if (response.init === "YES") {
+            let empID = companyEmployee.indexOf(response.employee) + 1;
+            let roleID = companyRole.indexOf(response.role) + 1;
+            db.query(`UPDATE employee SET roles_id = '${roleID}' WHERE id = '${empID}'`, (err, result) => {
+                if (err) throw err;
+                console.log('Succesfully updated employee role');
+                main();
+            })
+        } else {
+            main();
+        };
+    });
+};
