@@ -215,15 +215,16 @@ function addEmp() {
 
 function updateEmp() {
     let companyEmployee = [];
-    let companyRole = [];
 
     db.query('SELECT * FROM employee', (err, result) => {
         if (err) throw err;
         for(let i = 0; i < result.length; i++) {
-        companyEmployee.push(result[i].first_name + ' ' + result[i].last_name)
+        companyEmployee.push(result[i].id + '. ' + result[i].first_name + ' ' + result[i].last_name)
         } return companyEmployee
     });
-   
+
+    let companyRole = [];
+
     db.query('SELECT * FROM roles', (err, result) => {
         if (err) throw err;
         for(let i = 0; i < result.length; i++) {
@@ -236,7 +237,7 @@ function updateEmp() {
         {
             type: 'list',
             name: 'init',
-            message: 'Upadte employee role?',
+            message: 'Update employee role?',
             choices: ['YES', 'NO']
         },
         {
@@ -246,21 +247,21 @@ function updateEmp() {
             choices: companyEmployee,
         },
         {
-        type: 'list',
-        name: 'newRole',
-        message: 'Select role',
-        choices: companyRole,
+            type: 'list',
+            name: 'newRole',
+            message: 'Select role to assign employee',
+            choices: companyRole,
         }
     ])
     .then ((response) => {
         if (response.init === "YES") {
             let empID = companyEmployee.indexOf(response.employee) + 1;
-            let roleID = companyRole.indexOf(response.role) + 1;
-            db.query(`UPDATE employee SET roles_id = '${roleID}' WHERE id = '${empID}'`, (err, result) => {
+            let roleID = companyRole.indexOf(response.newRole) +1;
+            db.query(`UPDATE employee SET roles_id = ${roleID} WHERE id = ${empID}`, (err, result) => {
                 if (err) throw err;
-                console.log('Succesfully updated employee role');
+                console.log('Updated employee role');
                 main();
-            })
+            });
         } else {
             main();
         };
