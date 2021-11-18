@@ -19,7 +19,7 @@
   Fork repo to contribute to application.
 
   ## Test
-  link to test video:
+  link to test video: https://watch.screencastify.com/v/ceDZ67aRFpA6fwdek7em
   
 
   ## License
